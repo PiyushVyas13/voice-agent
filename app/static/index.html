@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BotrixAI Voice Agent</title>
+    <script src="/static/js/app.js" type="module"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --primary-color: #4285F4;
+        --secondary-color: #34A853;
+        --accent-color: #EA4335;
+        --background-color: #18191A;
+        --text-color: #fff;
+        --gray-light: #232323;
+        --gray-medium: #444;
+      }
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--background-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 0;
+      }
+      /* Floating support widget */
+      #support-widget {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        background: #111;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px 24px;
+        z-index: 1000;
+        cursor: pointer;
+        transition: box-shadow 0.2s;
+      }
+      #support-widget:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+      }
+      /* New radial spinner mic logo */
+      .mic-spinner {
+        position: relative;
+        width: 56px;
+        height: 56px;
+      }
+      .mic-spinner .spinner {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 56px;
+        height: 56px;
+        transform: translate(-50%, -50%);
+        z-index: 1;
+        pointer-events: none;
+        display: block;
+      }
+      .mic-spinner-bar {
+        transition: fill 0.2s, opacity 0.2s;
+        fill: #444;
+        opacity: 0.5;
+      }
+      .mic-spinner-bar.active {
+        fill: url(#rainbow-gradient);
+        opacity: 1;
+      }
+      .mic-spinner .mic-bg {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 28px;
+        height: 28px;
+        background: #18191A;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        transform: translate(-50%, -50%);
+      }
+      .mic-spinner .mic-icon svg {
+        width: 14px;
+        height: 14px;
+        color: #fff;
+        display: block;
+      }
+      #support-widget-text {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      #support-widget-text span {
+        font-size: 16px;
+        font-weight: 500;
+      }
+      #support-widget-text button {
+        margin-top: 2px;
+        padding: 6px 18px;
+        border-radius: 16px;
+        border: none;
+        background: #fff;
+        color: #18191A;
+        font-weight: 500;
+        font-size: 15px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      #support-widget-text button:hover {
+        background: #eee;
+      }
+      /* Modal chat window */
+      #chat-modal {
+        display: none;
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        width: 400px;
+        height: 500px;
+        background: #111;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+        z-index: 2000;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #chat-modal.active {
+        display: flex;
+      }
+      #chat-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 22px 22px 0 22px;
+        position: relative;
+      }
+      #chat-modal .mic-spinner {
+        width: 38px;
+        height: 38px;
+        border-width: 3px;
+        font-size: 18px;
+      }
+      #chat-modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #fff;
+        margin-left: 12px;
+      }
+      /* Hangup button in header */
+      #end-call-btn {
+        background: #EA4335;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        transition: background 0.2s;
+        z-index: 10;
+        margin-left: 12px;
+      }
+      #end-call-btn:hover {
+        background: #c62828;
+      }
+      #end-call-btn svg {
+        width: 22px;
+        height: 22px;
+        color: #fff;
+      }
+      #chat-modal-body {
+        flex: 1;
+        background: #18191A;
+        margin: 18px;
+        border-radius: 12px;
+        padding: 0;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      #messages {
+        flex: 1;
+        padding: 18px;
+        background: transparent;
+        color: #fff;
+        font-size: 15px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+      #messageForm {
+        display: none !important;
+      }
+      #startAudioButton, #stopAudioButton {
+        display: none;
+      }
+      /* Hide scrollbars for modal */
+      #chat-modal-body::-webkit-scrollbar, #messages::-webkit-scrollbar {
+        display: none;
+      }
+      @media (max-width: 600px) {
+        #chat-modal, #support-widget {
+          right: 8px;
+          bottom: 8px;
+          width: 98vw;
+          max-width: 98vw;
+        }
+        #chat-modal {
+          height: 90vh;
+          min-height: 350px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Floating Support Widget -->
+    <div id="support-widget">
+      <div class="mic-spinner">
+        <span class="spinner">
+          <svg id="mic-spinner-svg" width="56" height="56" viewBox="0 0 56 56">
+            <defs>
+              <linearGradient id="rainbow-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#A259FF"/>
+                <stop offset="20%" stop-color="#F24E1E"/>
+                <stop offset="40%" stop-color="#FFD600"/>
+                <stop offset="60%" stop-color="#00C4CC"/>
+                <stop offset="80%" stop-color="#34A853"/>
+                <stop offset="100%" stop-color="#4285F4"/>
+              </linearGradient>
+            </defs>
+            <!-- 24 bars -->
+            <g id="mic-spinner-bars"></g>
+          </svg>
+        </span>
+        <span class="mic-bg">
+          <span class="mic-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="24" height="24" fill="none"/>
+              <path d="M12 16c1.66 0 3-1.34 3-3V7c0-1.66-1.34-3-3-3s-3 1.34-3 3v6c0 1.66 1.34 3 3 3z" fill="currentColor"/>
+              <path d="M17.3 11c0 2.54-2.06 4.6-4.6 4.6s-4.6-2.06-4.6-4.6H6c0 3.07 2.13 5.64 5 6.32V21h2v-3.68c2.87-.68 5-3.25 5-6.32h-1.7z" fill="currentColor"/>
+            </svg>
+          </span>
+        </span>
+      </div>
+      <div id="support-widget-text">
+        <span>Need support?</span>
+        <button id="open-chat-btn">Start voice chat</button>
+      </div>
+    </div>
+    <!-- Modal Chat Window -->
+    <div id="chat-modal">
+      <div id="chat-modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="mic-spinner">
+            <span class="spinner">
+              <svg id="mic-spinner-svg" width="56" height="56" viewBox="0 0 56 56">
+                <defs>
+                  <linearGradient id="rainbow-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#A259FF"/>
+                    <stop offset="20%" stop-color="#F24E1E"/>
+                    <stop offset="40%" stop-color="#FFD600"/>
+                    <stop offset="60%" stop-color="#00C4CC"/>
+                    <stop offset="80%" stop-color="#34A853"/>
+                    <stop offset="100%" stop-color="#4285F4"/>
+                  </linearGradient>
+                </defs>
+                <!-- 24 bars -->
+                <g id="mic-spinner-bars"></g>
+              </svg>
+            </span>
+            <span class="mic-bg">
+              <span class="mic-icon">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="24" height="24" fill="none"/>
+                  <path d="M12 16c1.66 0 3-1.34 3-3V7c0-1.66-1.34-3-3-3s-3 1.34-3 3v6c0 1.66 1.34 3 3 3z" fill="currentColor"/>
+                  <path d="M17.3 11c0 2.54-2.06 4.6-4.6 4.6s-4.6-2.06-4.6-4.6H6c0 3.07 2.13 5.64 5 6.32V21h2v-3.68c2.87-.68 5-3.25 5-6.32h-1.7z" fill="currentColor"/>
+                </svg>
+              </span>
+            </span>
+          </div>
+          <span id="chat-modal-title">BotrixAI Support</span>
+        </div>
+        <button id="end-call-btn" title="End chat">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="24" height="24" fill="none"/>
+            <path d="M21 15.46l-5.27-2.11a.996.996 0 0 0-1.11.27l-2.1 2.32c-2.83-1.48-5.09-3.74-6.57-6.57l2.32-2.1a.996.996 0 0 0 .27-1.11L8.54 3A.995.995 0 0 0 7.59 2H4.03C3.47 2 3 2.47 3 3.03c0 10.49 8.48 18.97 18.97 18.97.56 0 1.03-.47 1.03-1.03v-3.56c0-.55-.45-1-1-1-.13 0-.26.03-.38.08z" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+      <div id="chat-modal-body">
+        <div id="messages">
+          <div id="typing-indicator" class="typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+    // Mic spinner animation logic (for both widget and modal header)
+    (function() {
+      const NUM_BARS = 24;
+      const RADIUS = 24;
+      const BAR_WIDTH = 4;
+      const BAR_HEIGHT = 12;
+      const CENTER = 28;
+      function setupSpinner(svgId, barsId) {
+        const barsGroup = document.getElementById(barsId);
+        if (barsGroup && barsGroup.children.length === 0) {
+          // Create bars
+          for (let i = 0; i < NUM_BARS; i++) {
+            const angle = (i / NUM_BARS) * 2 * Math.PI;
+            const x = CENTER + RADIUS * Math.cos(angle) - BAR_WIDTH / 2;
+            const y = CENTER + RADIUS * Math.sin(angle) - BAR_HEIGHT / 2;
+            const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bar.setAttribute('x', x);
+            bar.setAttribute('y', y);
+            bar.setAttribute('width', BAR_WIDTH);
+            bar.setAttribute('height', BAR_HEIGHT);
+            bar.setAttribute('rx', 2);
+            bar.setAttribute('ry', 2);
+            bar.setAttribute('transform', `rotate(${(i * 360) / NUM_BARS} ${x + BAR_WIDTH / 2} ${y + BAR_HEIGHT / 2})`);
+            bar.setAttribute('class', 'mic-spinner-bar');
+            barsGroup.appendChild(bar);
+          }
+          // Animate
+          let active = 0;
+          setInterval(() => {
+            for (let i = 0; i < NUM_BARS; i++) {
+              barsGroup.children[i].classList.toggle('active', i === active);
+            }
+            active = (active + 1) % NUM_BARS;
+          }, 60);
+        }
+      }
+      setupSpinner('mic-spinner-svg', 'mic-spinner-bars');
+    })();
+    </script>
+  </body>
+</html>
