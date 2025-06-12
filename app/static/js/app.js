@@ -8,7 +8,7 @@
 
 // Global variables
 const sessionId = Math.random().toString().substring(10);
-const ws_url = "ws://" + window.location.host + "/ws/" + sessionId;
+const ws_url =   (window.location.protocol === "https:" ? "wss://" : "ws://") +   window.location.host +   "/ws/" +   sessionId;
 let websocket = null;
 let is_audio = false;
 let currentMessageId = null; // Track the current message ID during a conversation turn
