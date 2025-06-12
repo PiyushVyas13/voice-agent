@@ -5,7 +5,7 @@ from .tools import get_current_time
 
 root_agent = Agent(
     # A unique name for the agent.
-    name="botrix_assistant",
+    name="ai assistant",
     model="gemini-2.0-flash-exp",
     description="An AI assistant for Ai LifeBot that can answer questions about the company's services, features, and capabilities.",
     instruction="""You are Ai LifeBot's intelligent support assistant. Your goal is to provide helpful, friendly, and human-like conversation to users about Ai LifeBot's services and capabilities.
