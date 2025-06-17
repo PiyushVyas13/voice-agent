@@ -1,0 +1,48 @@
+trigger:
+- main
+
+variables:
+- group: voice-agent-secrets  # Create this variable group in Azure DevOps
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildAndDeploy
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Login to Azure'
+      inputs:
+        azureSubscription: 'your-service-connection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az acr login --name $(registryName)
+
+    - task: Bash@3
+      displayName: 'Create credentials.json from pipeline variable'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo '$(googleCredentialsJson)' > credentials.json
+          echo 'GOOGLE_API_KEY=$(googleApiKey)' > .env
+
+    - task: AzureCLI@2
+      displayName: 'Build and Deploy Container'
+      inputs:
+        azureSubscription: 'your-service-connection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          # Build image
+          az acr build --registry $(registryName) --image voice-agent:latest .
+          
+          # Deploy to Container Apps
+          az containerapp up \
+            --resource-group $(resourceGroup) \
+            --name voice-agent-demo \
+            --image $(registryName).azurecr.io/voice-agent:latest \
+            --target-port 8000 \
+            --ingress external 

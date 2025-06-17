@@ -24,6 +24,11 @@ jobs:
       - name: Checkout to the branch
         uses: actions/checkout@v2
 
+      - name: Create credentials from secrets
+        run: |
+          echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
+          echo "✅ Created credentials.json"
+
       - name: Azure Login
         uses: azure/login@v1
         with:

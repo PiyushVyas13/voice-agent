@@ -27,7 +27,7 @@ wheels/
 MANIFEST
 
 # Virtual environments
-.env
+# .env  # Commented out - we need this file for deployment
 .venv
 env/
 venv/
@@ -94,5 +94,5 @@ node_modules/
 npm-debug.log*
 
 # Keep these files for the container
-!credentials.json
-!.env 
+# Note: credentials.json and .env are created by GitHub Actions
+# so they don't need to be explicitly included here 
